@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>지뢰찾기</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <h1>지뢰찾기</h1>
+      <section class="controls">
+        <label>
+          난이도
+          <select id="difficulty">
+            <option value="very-easy">매우 쉬움 (5x5)</option>
+            <option value="easy" selected>쉬움 (10x10)</option>
+            <option value="medium">보통 (15x15)</option>
+            <option value="hard">어려움 (20x20)</option>
+          </select>
+        </label>
+        <div class="buttons">
+          <button id="flagModeBtn" aria-pressed="false">깃발 모드 OFF</button>
+          <button id="resetBtn">새 게임</button>
+        </div>
+        <div class="stats">
+          <span>남은 지뢰: <strong id="minesLeft">0</strong></span>
+          <span>시간: <strong id="timer">000</strong>s</span>
+        </div>
+      </section>
+      <section class="board-wrapper">
+        <div id="board" class="board" role="grid" aria-label="지뢰찾기 보드"></div>
+      </section>
+      <p class="hint">
+        좌클릭/탭: 열기 · 깃발 모드 활성화 시 탭으로 깃발 · 우클릭도 가능 · 스페이스: 빠른 재도전
+      </p>
+      <div id="status" class="status" aria-live="polite"></div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
+
