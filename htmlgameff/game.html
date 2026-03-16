@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>IQ 테스트 - 20문제</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>IQ 테스트 (20문제)</h1>
+    <div class="subtitle">
+      순수 추리 능력을 보는 간단한 연습용 테스트입니다. 마음 편하게 풀어 보세요.
+    </div>
+
+    <div class="status-bar">
+      <div>
+        <span id="questionCounter">1 / 20</span>
+      </div>
+      <div class="progress">
+        <div class="progress-inner" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div class="question-card" id="questionCard">
+      <div class="q-header">
+        <div class="q-number" id="qNumber">문제 1</div>
+        <div class="q-type" id="qType">수열 추리</div>
+      </div>
+      <div class="q-text" id="qText"></div>
+      <div class="sequence" id="qSequence"></div>
+      <div class="options" id="options"></div>
+      <div style="font-size: 11px; color: #9ca3af; text-align: right;" id="qHint"></div>
+    </div>
+
+    <div class="nav">
+      <button id="prevBtn" class="btn-secondary" disabled>← 이전</button>
+      <div class="pill">
+        <span class="pill-dot"></span>
+        <span id="answeredCount">0</span>/<span id="totalCount">20</span> 문항 응답
+      </div>
+      <button id="nextBtn" class="btn-primary" disabled>다음 →</button>
+    </div>
+
+    <div class="index-dots" id="indexDots"></div>
+
+    <div class="result" id="resultBox">
+      <div class="score" id="scoreText"></div>
+      <div class="iq-range" id="iqRange"></div>
+      <div class="comment" id="commentText"></div>
+      <div class="detail" id="detailText"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
