@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>룰렛 배팅 게임</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255, 255, 255, 0.06);
+      --panel2: rgba(255, 255, 255, 0.1);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.65);
+      --good: #35d07f;
+      --bad: #ff4d6d;
+      --red: #e53935;
+      --black: #111;
+      --green: #16a34a;
+      --gold: #fbbf24;
+      --ring: rgba(255, 255, 255, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 15% 10%, rgba(59,130,246,0.25), transparent 60%),
+                  radial-gradient(900px 600px at 85% 15%, rgba(244,63,94,0.18), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 22px auto;
+      padding: 0 16px 28px;
+    }
+
+    header {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      font-weight: 800;
+    }
+
+    .pillbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .pill {
+      background: var(--panel);
+      border: 1px solid var(--ring);
+      padding: 10px 12px;
+      border-radius: 14px;
+      min-width: 170px;
+    }
+    .pill .label { color: var(--muted); font-size: 12px; }
+    .pill .value { font-size: 18px; font-weight: 800; margin-top: 4px; }
+    .pill .value.small { font-size: 15px; }
+
+    .playerBar {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .playerChips {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex: 1 1 260px;
+    }
+    .playerChip {
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      user-select: none;
+    }
+    .playerChip.active {
+      border-color: rgba(59,130,246,0.65);
+      background: rgba(59,130,246,0.22);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--ring);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .betrow {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .betrow > * { flex: 0 0 auto; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 140px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--ring);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+    input[type="number"]:focus { border-color: rgba(147,197,253,0.8); }
+
+    .seg {
+      display: inline-flex;
+      border: 1px solid var(--ring);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .seg button {
+      appearance: none;
+      border: 0;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      padding: 10px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+    .seg button:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.85); }
+    .seg button.active {
+      background: rgba(59,130,246,0.25);
+      color: rgba(255,255,255,0.95);
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--ring);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 160ms ease;
+      user-select: none;
+    }
+    .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.09); }
+    .btn:active { transform: translateY(0px); }
+    .btn[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn.primary {
+      border-color: rgba(251,191,36,0.6);
+      background: rgba(251,191,36,0.18);
+    }
+
+    .mini {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      color: rgba(255,255,255,0.82);
+    }
+    .mini:hover { background: rgba(255,255,255,0.09); }
+
+    .betmeta {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      min-height: 44px;
+    }
+
+    .numbers {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .num {
+      border-radius: 14px;
+      padding: 10px 0;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      font-weight: 900;
+      transition: 140ms ease;
+      user-select: none;
+      text-align: center;
+    }
+    .num:hover { transform: translateY(-1px); background: rgba(255,255,255,0.09); }
+    .num.selected { outline: 2px solid rgba(147,197,253,0.95); outline-offset: 2px; }
+    .num.red { color: var(--red); }
+    .num.black { color: var(--black); background: rgba(0,0,0,0.3); border-color: rgba(0,0,0,0.35); }
+    .num.green { color: var(--green); }
+
+    .colorGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .colorBtn {
+      padding: 14px 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      cursor: pointer;
+      user-select: none;
+      font-weight: 900;
+      text-align: center;
+    }
+    .colorBtn.selected { outline: 2px solid rgba(147,197,253,0.95); outline-offset: 2px; }
+    .colorBtn.red { color: var(--red); }
+    .colorBtn.black { color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.3); border-color: rgba(0,0,0,0.35); }
+    .colorBtn.green { color: var(--green); }
+
+    .wheelArea {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .wheel {
+      display: grid;
+      grid-template-columns: 1fr;
+      place-items: center;
+      padding: 18px 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wheelFace {
+      width: min(420px, 100%);
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 35%, rgba(255,255,255,0.16), rgba(255,255,255,0.02) 45%),
+                  radial-gradient(circle at 50% 50%, rgba(251,191,36,0.12), rgba(251,191,36,0) 60%),
+                  rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.35);
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .wheelInner {
+      width: 72%;
+      height: 72%;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: radial-gradient(circle at 30% 25%, rgba(59,130,246,0.20), rgba(59,130,246,0.03) 55%),
+                  rgba(0,0,0,0.22);
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .pointer {
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 20px solid rgba(255,255,255,0.75);
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,0.35));
+      z-index: 5;
+    }
+
+    .resultCenter {
+      z-index: 4;
+      border-radius: 16px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.16);
+      text-align: center;
+      min-width: 140px;
+    }
+    .resultCenter .big {
+      font-size: 40px;
+      font-weight: 1000;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .resultCenter .small { color: var(--muted); font-weight: 800; font-size: 13px; }
+
+    .spinner {
+      position: absolute;
+      inset: -30px;
+      border-radius: 50%;
+      border: 10px solid rgba(255,255,255,0.06);
+      border-top-color: rgba(251,191,36,0.4);
+      transform-origin: center;
+      animation: none;
+      z-index: 3;
+    }
+    .spin-anim {
+      animation: spinspin 2400ms cubic-bezier(.12,.86,.2,1) both;
+    }
+    @keyframes spinspin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(2880deg); }
+    }
+
+    .wheelNumbersRing {
+      position: absolute;
+      inset: 10px;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      opacity: 0.72;
+    }
+    .wheelNumbersRing .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px dashed rgba(255,255,255,0.18);
+    }
+    .wheelNumbersRing .ringLabel {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .lastResults {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      font-weight: 900;
+      font-size: 13px;
+    }
+    .tag.red { color: var(--red); }
+    .tag.black { color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.30); border-color: rgba(0,0,0,0.35); }
+    .tag.green { color: var(--green); }
+
+    .status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      min-height: 44px;
+      white-space: pre-wrap;
+    }
+    .status.good { border-color: rgba(53,208,127,0.45); color: rgba(180,255,214,0.95); background: rgba(53,208,127,0.10); }
+    .status.bad { border-color: rgba(255,77,109,0.55); color: rgba(255,176,189,0.95); background: rgba(255,77,109,0.12); }
+
+    .footerNote {
+      margin-top: 12px;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>룰렛 배팅 게임 (유럽 룰렛: 0~36)</h1>
+      <div class="pillbar">
+        <div class="pill">
+          <div class="label">잔액</div>
+          <div class="value" id="balanceText">1000</div>
+        </div>
+        <div class="pill">
+          <div class="label">현재 플레이어</div>
+          <div class="value small" id="currentPlayerText">플레이어 1</div>
+        </div>
+        <div class="pill">
+          <div class="label">마지막 결과</div>
+          <div class="value" id="lastText">-</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card wheelArea">
+        <div class="wheel">
+          <div class="pointer"></div>
+          <div class="wheelFace" aria-label="룰렛">
+            <div id="spinner" class="spinner"></div>
+            <div class="wheelInner">
+              <div class="resultCenter" id="resultCenter">
+                <div class="big" id="resultNumber">-</div>
+                <div class="small" id="resultDesc">스핀 준비</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:1000; letter-spacing:-0.02em;">최근 결과</div>
+              <div style="color:var(--muted); font-size:13px; margin-top:3px;">가장 최근 10개</div>
+            </div>
+            <button class="btn" id="resetBtn" type="button">리셋</button>
+          </div>
+          <div class="lastResults" id="lastResults"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <div style="font-weight:1000; letter-spacing:-0.02em;">배팅</div>
+          <div class="footerNote">배팅금은 `스핀` 버튼 누르기 전에 입력/선택합니다.</div>
+        </div>
+
+        <div class="playerBar">
+          <div class="playerChips" id="playerChips"></div>
+          <input id="newPlayerName" type="text" placeholder="플레이어 이름" />
+          <button class="btn" id="addPlayerBtn" type="button">플레이어 추가</button>
+        </div>
+
+        <div class="betrow" style="margin-top:12px;">
+          <div>
+            <label for="betAmount">배팅금</label>
+            <input id="betAmount" type="number" min="1" step="1" value="50" />
+          </div>
+          <div style="margin-top:24px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="mini" type="button" data-amt="10">+10</button>
+            <button class="mini" type="button" data-amt="25">+25</button>
+            <button class="mini" type="button" data-amt="50">+50</button>
+            <button class="mini" type="button" data-amt="100">+100</button>
+            <button class="mini" type="button" id="maxBetBtn">최대</button>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label>베팅 종류</label>
+          <div class="seg" role="tablist" aria-label="베팅 종류">
+            <button type="button" class="active" data-bet="number">번호</button>
+            <button type="button" data-bet="color">색</button>
+            <button type="button" data-bet="parity">홀짝</button>
+            <button type="button" data-bet="range">구간</button>
+          </div>
+        </div>
+
+        <div class="betmeta" id="betMeta">
+          번호를 선택하세요.
+        </div>
+
+        <div id="betNumberSection">
+          <div style="margin-top:10px; color:var(--muted); font-size:13px; font-weight:800;">0~36 번호 선택</div>
+          <div class="numbers" id="numberGrid"></div>
+        </div>
+
+        <div id="betColorSection" style="display:none;">
+          <div style="margin-top:10px; color:var(--muted); font-size:13px; font-weight:800;">빨강/검정 선택 (0은 자동으로 패배)</div>
+          <div class="colorGrid">
+            <div class="colorBtn red" data-color="red">RED</div>
+            <div class="colorBtn black" data-color="black">BLACK</div>
+            <div class="colorBtn green" data-color="green">GREEN(0)</div>
+          </div>
+          <div class="footerNote">GREEN은 `0`이 나올 때만 당첨합니다. (지급은 번호 베팅과 동일)</div>
+        </div>
+
+        <div id="betParitySection" style="display:none;">
+          <div style="margin-top:10px; color:var(--muted); font-size:13px; font-weight:800;">홀짝 선택 (0은 자동으로 패배)</div>
+          <div class="colorGrid">
+            <div class="colorBtn" style="border-color:rgba(255,255,255,0.16);" data-parity="odd">ODD</div>
+            <div class="colorBtn" style="border-color:rgba(255,255,255,0.16);" data-parity="even">EVEN</div>
+            <div class="colorBtn green" data-parity="zero">ZERO(0만)</div>
+          </div>
+          <div class="footerNote">ZERO는 `0`이 나올 때만 당첨합니다. (지급은 번호 베팅과 동일)</div>
+        </div>
+
+        <div id="betRangeSection" style="display:none;">
+          <div style="margin-top:10px; color:var(--muted); font-size:13px; font-weight:800;">구간 선택 (0은 자동으로 패배)</div>
+          <div class="colorGrid">
+            <div class="colorBtn" style="border-color:rgba(255,255,255,0.16);" data-range="low">1~18</div>
+            <div class="colorBtn" style="border-color:rgba(255,255,255,0.16);" data-range="high">19~36</div>
+            <div class="colorBtn green" data-range="zero">ZERO(0만)</div>
+          </div>
+          <div class="footerNote">ZERO는 `0`이 나올 때만 당첨합니다. (지급은 번호 베팅과 동일)</div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="btn primary" id="spinBtn" type="button">스핀</button>
+          <button class="btn" id="withdrawBtn" type="button" style="margin-left:10px;">현금(잔액) 내리기</button>
+        </div>
+
+        <div class="status" id="statusBox">배팅을 선택한 뒤 스핀하세요.</div>
+
+        <div class="footerNote">
+          규칙 요약: 번호(35:1), 색/홀짝/구간(1:1). `0`은 별도(녹색/제로 베팅)로도 가능합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 유럽 룰렛 (0~36) 색상 매핑: red 18개, black 18개
+    const RED_NUMS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+    const BLACK_NUMS = new Set([2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35]);
+
+    function getColor(n) {
+      if (n === 0) return "green";
+      if (RED_NUMS.has(n)) return "red";
+      if (BLACK_NUMS.has(n)) return "black";
+      // 이론상 도달 불가
+      return "unknown";
+    }
+
+    // UI 상태
+    const state = {
+      players: [
+        { id: 1, name: "플레이어 1", balance: 1000 },
+        { id: 2, name: "플레이어 2", balance: 1000 }
+      ],
+      currentPlayerId: 1,
+      nextPlayerId: 3,
+      betType: "number", // number | color | parity | range
+      betAmount: 50,
+      selectedNumber: 7,
+      selectedColor: "red",   // red | black | green
+      selectedParity: "odd",  // odd | even | zero
+      selectedRange: "low",   // low | high | zero
+      spinning: false,
+      lastResults: [] // 최근 결과(숫자)
+    };
+
+    // DOM
+    const balanceText = document.getElementById("balanceText");
+    const currentPlayerText = document.getElementById("currentPlayerText");
+    const lastText = document.getElementById("lastText");
+    const numberGrid = document.getElementById("numberGrid");
+    const betMeta = document.getElementById("betMeta");
+    const betAmountEl = document.getElementById("betAmount");
+    const statusBox = document.getElementById("statusBox");
+    const spinBtn = document.getElementById("spinBtn");
+    const spinner = document.getElementById("spinner");
+    const resultNumber = document.getElementById("resultNumber");
+    const resultDesc = document.getElementById("resultDesc");
+    const lastResults = document.getElementById("lastResults");
+
+    const resetBtn = document.getElementById("resetBtn");
+    const maxBetBtn = document.getElementById("maxBetBtn");
+    const withdrawBtn = document.getElementById("withdrawBtn");
+    const playerChips = document.getElementById("playerChips");
+    const addPlayerBtn = document.getElementById("addPlayerBtn");
+    const newPlayerName = document.getElementById("newPlayerName");
+
+    // 섹션들
+    const betNumberSection = document.getElementById("betNumberSection");
+    const betColorSection = document.getElementById("betColorSection");
+    const betParitySection = document.getElementById("betParitySection");
+    const betRangeSection = document.getElementById("betRangeSection");
+
+    const setStatus = (msg, kind = "") => {
+      statusBox.classList.remove("good", "bad");
+      if (kind === "good") statusBox.classList.add("good");
+      if (kind === "bad") statusBox.classList.add("bad");
+      statusBox.textContent = msg;
+    };
+
+    function getCurrentPlayer() {
+      return state.players.find(p => p.id === state.currentPlayerId) || state.players[0];
+    }
+
+    function renderPlayerChips() {
+      playerChips.innerHTML = "";
+      state.players.forEach(player => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `playerChip${player.id === state.currentPlayerId ? " active" : ""}`;
+        chip.textContent = `${player.name} (${player.balance})`;
+        chip.addEventListener("click", () => {
+          if (state.spinning) return;
+          state.currentPlayerId = player.id;
+          updateBalanceUI();
+          setStatus(`${player.name} 차례입니다. 배팅 후 스핀하세요.`);
+        });
+        playerChips.appendChild(chip);
+      });
+    }
+
+    function updateBalanceUI() {
+      const player = getCurrentPlayer();
+      balanceText.textContent = String(player.balance);
+      currentPlayerText.textContent = player.name;
+      renderPlayerChips();
+    }
+
+    function updateBetMeta() {
+      if (state.betType === "number") {
+        betMeta.textContent = `번호 베팅: ${state.selectedNumber} (적중 시 +${state.betAmount * 35} 수익)`;
+      } else if (state.betType === "color") {
+        if (state.selectedColor === "green") {
+          betMeta.textContent = `GREEN(0) 베팅: 0 (적중 시 +${state.betAmount * 35} 수익)`;
+        } else {
+          betMeta.textContent = `색 베팅: ${state.selectedColor.toUpperCase()} (적중 시 +${state.betAmount} 수익)`;
+        }
+      } else if (state.betType === "parity") {
+        if (state.selectedParity === "zero") {
+          betMeta.textContent = `ZERO(0) 베팅: 0 (적중 시 +${state.betAmount * 35} 수익)`;
+        } else {
+          betMeta.textContent = `홀짝 베팅: ${state.selectedParity.toUpperCase()} (적중 시 +${state.betAmount} 수익)`;
+        }
+      } else if (state.betType === "range") {
+        if (state.selectedRange === "zero") {
+          betMeta.textContent = `ZERO(0) 베팅: 0 (적중 시 +${state.betAmount * 35} 수익)`;
+        } else {
+          const label = state.selectedRange === "low" ? "1~18" : "19~36";
+          betMeta.textContent = `구간 베팅: ${label} (적중 시 +${state.betAmount} 수익)`;
+        }
+      }
+    }
+
+    function updateSelectedStyles() {
+      // 번호 선택
+      const buttons = numberGrid.querySelectorAll(".num");
+      buttons.forEach(btn => {
+        const n = Number(btn.dataset.n);
+        btn.classList.toggle("selected", n === state.selectedNumber && state.betType === "number");
+      });
+
+      // 색
+      document.querySelectorAll("#betColorSection .colorBtn").forEach(el => {
+        const c = el.dataset.color;
+        el.classList.toggle("selected", c === state.selectedColor && state.betType === "color");
+      });
+
+      // 홀짝
+      document.querySelectorAll("#betParitySection .colorBtn").forEach(el => {
+        const p = el.dataset.parity;
+        el.classList.toggle("selected", p === state.selectedParity && state.betType === "parity");
+      });
+
+      // 구간
+      document.querySelectorAll("#betRangeSection .colorBtn").forEach(el => {
+        const r = el.dataset.range;
+        el.classList.toggle("selected", r === state.selectedRange && state.betType === "range");
+      });
+    }
+
+    function showBetSection() {
+      betNumberSection.style.display = state.betType === "number" ? "" : "none";
+      betColorSection.style.display = state.betType === "color" ? "" : "none";
+      betParitySection.style.display = state.betType === "parity" ? "" : "none";
+      betRangeSection.style.display = state.betType === "range" ? "" : "none";
+
+      document.querySelectorAll(".seg button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.bet === state.betType);
+      });
+
+      updateSelectedStyles();
+      updateBetMeta();
+    }
+
+    function setColorNumberStyle(n) {
+      const color = getColor(n);
+      if (color === "red") return "red";
+      if (color === "black") return "black";
+      if (color === "green") return "green";
+      return "";
+    }
+
+    function buildNumberGrid() {
+      // 0~36 (6열 x 7행 느낌)
+      const nums = Array.from({ length: 37 }, (_, i) => i);
+      numberGrid.innerHTML = "";
+      nums.forEach(n => {
+        const el = document.createElement("div");
+        el.className = `num ${setColorNumberStyle(n)}`;
+        el.textContent = String(n);
+        el.dataset.n = String(n);
+        el.addEventListener("click", () => {
+          state.selectedNumber = n;
+          updateSelectedStyles();
+          updateBetMeta();
+        });
+        numberGrid.appendChild(el);
+      });
+    }
+
+    // 베팅 종류 버튼
+    document.querySelectorAll(".seg button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.betType = btn.dataset.bet;
+        showBetSection();
+      });
+    });
+
+    // 색 선택
+    document.querySelectorAll("#betColorSection .colorBtn").forEach(el => {
+      el.addEventListener("click", () => {
+        state.selectedColor = el.dataset.color;
+        updateSelectedStyles();
+        updateBetMeta();
+      });
+    });
+
+    // 홀짝 선택
+    document.querySelectorAll("#betParitySection .colorBtn").forEach(el => {
+      el.addEventListener("click", () => {
+        state.selectedParity = el.dataset.parity;
+        updateSelectedStyles();
+        updateBetMeta();
+      });
+    });
+
+    // 구간 선택
+    document.querySelectorAll("#betRangeSection .colorBtn").forEach(el => {
+      el.addEventListener("click", () => {
+        state.selectedRange = el.dataset.range;
+        updateSelectedStyles();
+        updateBetMeta();
+      });
+    });
+
+    function randRoulette() {
+      return Math.floor(Math.random() * 37); // 0~36 균등
+    }
+
+    function getPayoutMultiplierForCurrentBet() {
+      // state.betType에 따라 "수익(이익) 배수"를 반환
+      // 번호 베팅(및 ZERO/GREEN): 35:1
+      // 색(RED/BLACK), 홀짝(ODD/EVEN), 구간(1~18/19~36): 1:1
+      if (state.betType === "number") return 35;
+      if (state.betType === "color") return state.selectedColor === "green" ? 35 : 1;
+      if (state.betType === "parity") return state.selectedParity === "zero" ? 35 : 1;
+      if (state.betType === "range") return state.selectedRange === "zero" ? 35 : 1;
+      return 0;
+    }
+
+    function doesBetHit(result) {
+      if (state.betType === "number") {
+        return result === state.selectedNumber;
+      }
+      if (state.betType === "color") {
+        const c = getColor(result); // red/black/green
+        return c === state.selectedColor;
+      }
+      if (state.betType === "parity") {
+        if (state.selectedParity === "zero") return result === 0;
+        if (result === 0) return false;
+        const isOdd = (result % 2) === 1;
+        return state.selectedParity === "odd" ? isOdd : !isOdd;
+      }
+      if (state.betType === "range") {
+        if (state.selectedRange === "zero") return result === 0;
+        if (result === 0) return false;
+        if (state.selectedRange === "low") return result >= 1 && result <= 18;
+        return result >= 19 && result <= 36;
+      }
+      return false;
+    }
+
+    function setResultUI(n) {
+      const color = getColor(n);
+      resultNumber.textContent = String(n);
+      if (color === "red") {
+        resultDesc.textContent = "RED";
+        resultNumber.style.color = "var(--red)";
+        resultCenter.style.borderColor = "rgba(229,57,53,0.45)";
+        resultCenter.style.background = "rgba(229,57,53,0.10)";
+      } else if (color === "black") {
+        resultDesc.textContent = "BLACK";
+        resultNumber.style.color = "var(--black)";
+        resultCenter.style.borderColor = "rgba(0,0,0,0.35)";
+        resultCenter.style.background = "rgba(0,0,0,0.26)";
+      } else if (color === "green") {
+        resultDesc.textContent = "GREEN";
+        resultNumber.style.color = "var(--green)";
+        resultCenter.style.borderColor = "rgba(22,163,74,0.45)";
+        resultCenter.style.background = "rgba(22,163,74,0.10)";
+      } else {
+        resultDesc.textContent = "UNKNOWN";
+      }
+    }
+
+    const resultCenter = document.getElementById("resultCenter");
+
+    function addResultTag(n) {
+      const color = getColor(n);
+      const tag = document.createElement("div");
+      tag.className = `tag ${color === "unknown" ? "" : color}`;
+      tag.textContent = String(n);
+      // state.lastResults는 최신이 앞쪽이므로, appendChild로 그대로 이어붙입니다.
+      lastResults.appendChild(tag);
+    }
+
+    function refreshRecentUI() {
+      lastResults.innerHTML = "";
+      state.lastResults.slice(0, 10).forEach(n => addResultTag(n));
+    }
+
+    function disableBetUI(disabled) {
+      spinBtn.disabled = disabled;
+      document.querySelectorAll(".seg button").forEach(btn => btn.disabled = disabled);
+      document.querySelectorAll("#betNumberSection .num").forEach(btn => btn.style.pointerEvents = disabled ? "none" : "");
+      document.querySelectorAll("#betColorSection .colorBtn").forEach(btn => btn.style.pointerEvents = disabled ? "none" : "");
+      document.querySelectorAll("#betParitySection .colorBtn").forEach(btn => btn.style.pointerEvents = disabled ? "none" : "");
+      document.querySelectorAll("#betRangeSection .colorBtn").forEach(btn => btn.style.pointerEvents = disabled ? "none" : "");
+      betAmountEl.disabled = disabled;
+      maxBetBtn.disabled = disabled;
+      resetBtn.disabled = disabled;
+      withdrawBtn.disabled = disabled;
+      addPlayerBtn.disabled = disabled;
+      newPlayerName.disabled = disabled;
+      document.querySelectorAll(".mini[data-amt]").forEach(btn => btn.disabled = disabled);
+    }
+
+    function normalizeBetAmount() {
+      const raw = Number(betAmountEl.value);
+      if (!Number.isFinite(raw)) return null;
+      const amt = Math.floor(raw);
+      if (amt < 1) return null;
+      return amt;
+    }
+
+    function resolveBet(result) {
+      const hit = doesBetHit(result);
+      const payoutMult = getPayoutMultiplierForCurrentBet(); // profit multiplier
+
+      // betAmount는 UI에서 확정된 값이어야 함
+      const bet = state.betAmount;
+      const player = getCurrentPlayer();
+      if (hit) {
+        const profit = bet * payoutMult;
+        const totalReturn = bet + profit;
+        player.balance += totalReturn; // 이미 bet만큼은 뺐으므로 총 반환
+        setStatus(`${player.name} 당첨! 결과: ${result} (${getColor(result).toUpperCase()})\n수익 +${profit} (총 반환 ${totalReturn})`, "good");
+        return { hit, profit, totalReturn };
+      }
+      setStatus(`${player.name} 꽝! 결과: ${result} (${getColor(result).toUpperCase()})\n베팅금 ${bet}을 잃었습니다.`, "bad");
+      return { hit, profit: 0, totalReturn: 0 };
+    }
+
+    spinBtn.addEventListener("click", async () => {
+      if (state.spinning) return;
+
+      const amt = normalizeBetAmount();
+      if (!amt) {
+        setStatus("배팅금은 1 이상의 숫자를 입력하세요.", "bad");
+        return;
+      }
+      state.betAmount = amt;
+      const player = getCurrentPlayer();
+
+      if (player.balance < state.betAmount) {
+        setStatus(`${player.name} 잔액이 부족합니다. 잔액 ${player.balance}, 배팅금 ${state.betAmount}`, "bad");
+        return;
+      }
+
+      // 베팅 처리(선차감)
+      player.balance -= state.betAmount;
+      updateBalanceUI();
+
+      state.spinning = true;
+      disableBetUI(true);
+      updateBetMeta();
+
+      // 스핀 애니메이션: 실제 결과는 바로 결정해두고, 애니메이션이 끝나면 표시
+      const result = randRoulette();
+      setResultUI(0); // 중간 깜빡임 방지용
+      resultCenter.style.opacity = "1";
+
+      spinner.classList.remove("spin-anim");
+      // reflow 트릭
+      void spinner.offsetWidth;
+      spinner.classList.add("spin-anim");
+
+      // 애니메이션 시간(2400ms)보다 약간 뒤에 반영
+      await new Promise(r => setTimeout(r, 2550));
+
+      spinner.classList.remove("spin-anim");
+      setResultUI(result);
+      lastText.textContent = String(result);
+      state.lastResults.unshift(result);
+      refreshRecentUI();
+
+      // 당첨/패 처리
+      resolveBet(result);
+
+      updateBalanceUI();
+
+      state.spinning = false;
+      disableBetUI(false);
+      updateBetMeta();
+    });
+
+    // 빠른 배팅 버튼
+    document.querySelectorAll(".mini[data-amt]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const add = Number(btn.dataset.amt);
+        const newAmt = Math.max(1, add);
+        betAmountEl.value = String(newAmt);
+        state.betAmount = newAmt;
+        updateBetMeta();
+        setStatus("배팅금이 설정되었습니다. 이제 스핀하세요.");
+      });
+    });
+
+    // 최대
+    maxBetBtn.addEventListener("click", () => {
+      const player = getCurrentPlayer();
+      const amt = Math.max(1, Math.floor(player.balance));
+      betAmountEl.value = String(amt);
+      state.betAmount = amt;
+      updateBetMeta();
+      setStatus(`최대 배팅금 설정: ${amt}`);
+    });
+
+    // 리셋
+    resetBtn.addEventListener("click", () => {
+      if (state.spinning) return;
+      state.players = [
+        { id: 1, name: "플레이어 1", balance: 1000 },
+        { id: 2, name: "플레이어 2", balance: 1000 }
+      ];
+      state.currentPlayerId = 1;
+      state.nextPlayerId = 3;
+      state.lastResults = [];
+      state.betType = "number";
+      state.selectedNumber = 7;
+      state.selectedColor = "red";
+      state.selectedParity = "odd";
+      state.selectedRange = "low";
+      state.betAmount = 50;
+      betAmountEl.value = "50";
+      updateBalanceUI();
+      lastText.textContent = "-";
+      resultNumber.textContent = "-";
+      resultDesc.textContent = "스핀 준비";
+      resultCenter.style.borderColor = "rgba(255,255,255,0.16)";
+      resultCenter.style.background = "rgba(255,255,255,0.08)";
+      refreshRecentUI();
+      showBetSection();
+      setStatus("새 게임 시작! 배팅을 선택한 뒤 스핀하세요.");
+    });
+
+    // "현금 내리기": 잔액을 100으로 맞춰서 반복 플레이 느낌 주기
+    withdrawBtn.addEventListener("click", () => {
+      if (state.spinning) return;
+      const player = getCurrentPlayer();
+      // 실제 현금 인출이 아니라, 잔액을 100으로 리셋하는 재미 기능
+      player.balance = 100;
+      updateBalanceUI();
+      setStatus(`${player.name} 잔액을 100으로 설정했습니다. 더 짧게 플레이해보세요.`);
+    });
+
+    addPlayerBtn.addEventListener("click", () => {
+      if (state.spinning) return;
+      const rawName = newPlayerName.value.trim();
+      const safeName = rawName || `플레이어 ${state.nextPlayerId}`;
+      const newPlayer = { id: state.nextPlayerId, name: safeName, balance: 1000 };
+      state.players.push(newPlayer);
+      state.currentPlayerId = newPlayer.id;
+      state.nextPlayerId += 1;
+      newPlayerName.value = "";
+      updateBalanceUI();
+      setStatus(`${safeName} 추가 완료! 현재 플레이어로 선택되었습니다.`);
+    });
+
+    // 배팅금 입력 변경
+    betAmountEl.addEventListener("input", () => {
+      const amt = normalizeBetAmount();
+      if (amt) {
+        state.betAmount = amt;
+        updateBetMeta();
+      }
+    });
+
+    // 초기화
+    buildNumberGrid();
+    updateBalanceUI();
+    showBetSection();
+    updateSelectedStyles();
+    updateBetMeta();
+    setStatus("배팅을 선택한 뒤 스핀하세요.");
+  </script>
+</body>
+</html>

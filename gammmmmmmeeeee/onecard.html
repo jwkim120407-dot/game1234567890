@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>원카드 게임</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255, 255, 255, 0.06);
+      --panel2: rgba(255, 255, 255, 0.1);
+      --text: rgba(255, 255, 255, 0.92);
+      --muted: rgba(255, 255, 255, 0.65);
+      --good: #35d07f;
+      --bad: #ff4d6d;
+      --red: #e53935;
+      --black: #111;
+      --green: #16a34a;
+      --ring: rgba(255, 255, 255, 0.18);
+      --gold: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 15% 10%, rgba(59,130,246,0.25), transparent 60%),
+                  radial-gradient(900px 600px at 85% 15%, rgba(244,63,94,0.18), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 22px auto;
+      padding: 0 16px 28px;
+    }
+    header {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      font-weight: 900;
+    }
+
+    .pillbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .pill {
+      background: var(--panel);
+      border: 1px solid var(--ring);
+      padding: 10px 12px;
+      border-radius: 14px;
+      min-width: 170px;
+    }
+    .pill .label { color: var(--muted); font-size: 12px; }
+    .pill .value { font-size: 18px; font-weight: 800; margin-top: 4px; }
+    .pill .value.small { font-size: 15px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 0.95fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--ring);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    input[type="number"], input[type="text"] {
+      width: 140px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--ring);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+    }
+    input[type="number"]:focus { border-color: rgba(147,197,253,0.8); }
+
+    .seg {
+      display: inline-flex;
+      border: 1px solid var(--ring);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-top: 10px;
+      width: fit-content;
+    }
+    .seg button {
+      appearance: none;
+      border: 0;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 160ms ease;
+    }
+    .seg button:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.85); }
+    .seg button.active { background: rgba(59,130,246,0.25); color: rgba(255,255,255,0.95); }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--ring);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 160ms ease;
+      user-select: none;
+    }
+    .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.09); }
+    .btn:active { transform: translateY(0px); }
+    .btn[disabled] { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .btn.primary {
+      border-color: rgba(251,191,36,0.6);
+      background: rgba(251,191,36,0.18);
+    }
+
+    .mini {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      color: rgba(255,255,255,0.82);
+      user-select: none;
+      transition: 160ms ease;
+    }
+    .mini:hover { background: rgba(255,255,255,0.09); }
+    .mini[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+    .betrow {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .footerNote {
+      margin-top: 12px;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      min-height: 44px;
+      white-space: pre-wrap;
+    }
+    .status.good { border-color: rgba(53,208,127,0.45); color: rgba(180,255,214,0.95); background: rgba(53,208,127,0.10); }
+    .status.bad { border-color: rgba(255,77,109,0.55); color: rgba(255,176,189,0.95); background: rgba(255,77,109,0.12); }
+
+    /* 카드 UI */
+    .tableTop {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .cardStage {
+      display: grid;
+      place-items: center;
+      padding: 18px 12px 14px;
+    }
+    .cardBack {
+      width: min(360px, 100%);
+      aspect-ratio: 5 / 7;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(59,130,246,0.35), transparent 55%),
+        radial-gradient(circle at 70% 30%, rgba(251,191,36,0.22), transparent 52%),
+        rgba(255,255,255,0.05);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.35);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cardBack .brand {
+      font-weight: 1000;
+      letter-spacing: -0.02em;
+      font-size: 20px;
+      color: rgba(255,255,255,0.82);
+    }
+    .cardBack .hint {
+      position: absolute;
+      bottom: 14px;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .cardFront {
+      width: min(360px, 100%);
+      aspect-ratio: 5 / 7;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.16), rgba(255,255,255,0.04) 60%),
+        rgba(255,255,255,0.05);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.35);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      transform: rotateY(0deg);
+      transition: transform 420ms ease, opacity 220ms ease;
+    }
+    .cardFront.dim { opacity: 0.85; }
+    .cardFront .rank {
+      font-size: 64px;
+      font-weight: 1100;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-top: 10px;
+    }
+    .cardFront .suit {
+      margin-top: 6px;
+      font-weight: 950;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 0.08em;
+      font-size: 13px;
+    }
+    .cardFront.red { border-color: rgba(229,57,53,0.5); }
+    .cardFront.black { border-color: rgba(0,0,0,0.35); }
+    .cardFront.red .rank { color: var(--red); }
+    .cardFront.black .rank { color: rgba(255,255,255,0.92); }
+
+    .lastResults {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      font-weight: 950;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+    }
+    .tag.red { color: var(--red); }
+    .tag.black { color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.30); border-color: rgba(0,0,0,0.35); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>원카드 게임 (1장 예측)</h1>
+      <div class="pillbar">
+        <div class="pill">
+          <div class="label">잔액</div>
+          <div class="value" id="balanceText">1000</div>
+        </div>
+        <div class="pill">
+          <div class="label">마지막 결과</div>
+          <div class="value" id="lastText">-</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <div class="tableTop">
+          <div class="cardStage">
+            <div id="cardBack" class="cardBack">
+              <div class="brand">ONE CARD</div>
+              <div class="hint">버튼을 누르면 카드가 1장 공개됩니다</div>
+            </div>
+            <div id="cardFront" class="cardFront hidden" aria-label="카드 결과">
+              <div class="rank" id="frontRank">-</div>
+              <div class="suit" id="frontSuit">-</div>
+            </div>
+          </div>
+
+          <div class="status" id="statusBox">배팅/예측을 선택한 뒤 `뽑기`를 누르세요.</div>
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top: 8px;">
+            <button class="btn" id="resetBtn" type="button">리셋</button>
+            <button class="btn" id="withdrawBtn" type="button">현금(잔액) 내리기</button>
+          </div>
+
+          <div style="margin-top: 8px;">
+            <div style="font-weight:1000; letter-spacing:-0.02em;">최근 카드</div>
+            <div style="color:var(--muted); font-size:13px; margin-top:3px;">가장 최근 10개</div>
+            <div class="lastResults" id="lastResults"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <div style="font-weight:1000; letter-spacing:-0.02em;">배팅</div>
+          <div class="footerNote">배팅금은 `뽑기` 누를 때만 차감됩니다.</div>
+        </div>
+
+        <div class="betrow">
+          <div>
+            <label for="betAmount">배팅금</label>
+            <input id="betAmount" type="number" min="1" step="1" value="50" />
+          </div>
+          <div style="margin-top: 24px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="mini" type="button" data-amt="10">+10</button>
+            <button class="mini" type="button" data-amt="25">+25</button>
+            <button class="mini" type="button" data-amt="50">+50</button>
+            <button class="mini" type="button" data-amt="100">+100</button>
+            <button class="mini" type="button" id="maxBetBtn">최대</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <label>예측 종류</label>
+          <div class="seg" role="tablist" aria-label="예측 종류">
+            <button type="button" class="active" data-predict="rank">숫자(A~K)</button>
+            <button type="button" data-predict="color">색(빨강/검정)</button>
+          </div>
+        </div>
+
+        <div class="hidden" id="predictRankSection">
+          <div style="margin-top: 12px; color:var(--muted); font-size:13px; font-weight:900;">A~K 중 1개 맞히기 (적중 시 +12배 수익)</div>
+          <div style="margin-top:10px; display:grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap:8px;">
+            <div class="numBtn" data-r="1">A</div>
+            <div class="numBtn" data-r="2">2</div>
+            <div class="numBtn" data-r="3">3</div>
+            <div class="numBtn" data-r="4">4</div>
+            <div class="numBtn" data-r="5">5</div>
+            <div class="numBtn" data-r="6">6</div>
+            <div class="numBtn" data-r="7">7</div>
+            <div class="numBtn" data-r="8">8</div>
+            <div class="numBtn" data-r="9">9</div>
+            <div class="numBtn" data-r="10">10</div>
+            <div class="numBtn" data-r="11">J</div>
+            <div class="numBtn" data-r="12">Q</div>
+            <div class="numBtn" data-r="13">K</div>
+          </div>
+        </div>
+
+        <div id="predictColorSection" style="margin-top: 12px;">
+          <div style="margin-top: 4px; color:var(--muted); font-size:13px; font-weight:900;">빨강/검정 맞히기 (적중 시 +1배 수익)</div>
+          <div style="margin-top: 10px; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="colorBtn red" id="colorRed" style="padding:14px 10px; border-radius:16px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); font-weight:1000; text-align:center; cursor:pointer;">
+              RED
+            </div>
+            <div class="colorBtn black" id="colorBlack" style="padding:14px 10px; border-radius:16px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); font-weight:1000; text-align:center; cursor:pointer; color: rgba(255,255,255,0.92); background: rgba(0,0,0,0.3); border-color: rgba(0,0,0,0.35);">
+              BLACK
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <button class="btn primary" id="drawBtn" type="button">뽑기</button>
+        </div>
+
+        <div class="footerNote">
+          규칙: 예측한 조건이 맞으면 베팅금에 수익(배수)을 더해 반환합니다.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 숫자(랭크) 표시용
+    const rankLabel = {
+      1: "A",
+      2: "2",
+      3: "3",
+      4: "4",
+      5: "5",
+      6: "6",
+      7: "7",
+      8: "8",
+      9: "9",
+      10: "10",
+      11: "J",
+      12: "Q",
+      13: "K"
+    };
+
+    const SUITS = ["hearts", "diamonds", "clubs", "spades"];
+    function getCardColor(suit) {
+      // hearts/diamonds = red, clubs/spades = black
+      return (suit === "hearts" || suit === "diamonds") ? "red" : "black";
+    }
+
+    function getSuitShort(suit) {
+      if (suit === "hearts") return "H";
+      if (suit === "diamonds") return "D";
+      if (suit === "clubs") return "C";
+      if (suit === "spades") return "S";
+      return "?";
+    }
+
+    function createDeck() {
+      const deck = [];
+      for (let r = 1; r <= 13; r++) {
+        for (const suit of SUITS) {
+          deck.push({
+            rank: r,
+            suit,
+            color: getCardColor(suit)
+          });
+        }
+      }
+      return deck;
+    }
+
+    const deck = createDeck();
+
+    // 상태
+    const state = {
+      balance: 1000,
+      betAmount: 50,
+      predictType: "rank", // rank | color
+      predictRank: 7,
+      predictColor: "red", // red | black
+      spinning: false,
+      lastResults: []
+    };
+
+    // DOM
+    const balanceText = document.getElementById("balanceText");
+    const lastText = document.getElementById("lastText");
+    const statusBox = document.getElementById("statusBox");
+    const betAmountEl = document.getElementById("betAmount");
+    const drawBtn = document.getElementById("drawBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const withdrawBtn = document.getElementById("withdrawBtn");
+    const maxBetBtn = document.getElementById("maxBetBtn");
+    const lastResults = document.getElementById("lastResults");
+
+    const cardBack = document.getElementById("cardBack");
+    const cardFront = document.getElementById("cardFront");
+    const frontRank = document.getElementById("frontRank");
+    const frontSuit = document.getElementById("frontSuit");
+
+    const predictRankSection = document.getElementById("predictRankSection");
+    const predictColorSection = document.getElementById("predictColorSection");
+    const colorRed = document.getElementById("colorRed");
+    const colorBlack = document.getElementById("colorBlack");
+
+    const numButtons = Array.from(document.querySelectorAll(".numBtn"));
+
+    function setStatus(msg, kind = "") {
+      statusBox.classList.remove("good", "bad");
+      if (kind === "good") statusBox.classList.add("good");
+      if (kind === "bad") statusBox.classList.add("bad");
+      statusBox.textContent = msg;
+    }
+
+    function updateBalanceUI() {
+      balanceText.textContent = String(state.balance);
+    }
+
+    function disableUI(disabled) {
+      drawBtn.disabled = disabled;
+      resetBtn.disabled = disabled;
+      withdrawBtn.disabled = disabled;
+      maxBetBtn.disabled = disabled;
+      betAmountEl.disabled = disabled;
+      document.querySelectorAll(".mini[data-amt], .mini").forEach(btn => btn.disabled = disabled);
+      document.querySelectorAll(".seg button").forEach(btn => btn.disabled = disabled);
+      numButtons.forEach(b => b.style.pointerEvents = disabled ? "none" : "auto");
+      colorRed.style.pointerEvents = disabled ? "none" : "auto";
+      colorBlack.style.pointerEvents = disabled ? "none" : "auto";
+    }
+
+    function normalizeBetAmount() {
+      const raw = Number(betAmountEl.value);
+      if (!Number.isFinite(raw)) return null;
+      const amt = Math.floor(raw);
+      if (amt < 1) return null;
+      return amt;
+    }
+
+    function updatePredictUI() {
+      const rankActive = state.predictType === "rank";
+      predictRankSection.classList.toggle("hidden", !rankActive);
+      predictColorSection.classList.toggle("hidden", rankActive);
+
+      // 숫자 버튼 선택 스타일
+      numButtons.forEach(btn => {
+        const r = Number(btn.dataset.r);
+        const selected = r === state.predictRank && state.predictType === "rank";
+        btn.style.outline = selected ? "2px solid rgba(147,197,253,0.95)" : "none";
+        btn.style.outlineOffset = selected ? "2px" : "0px";
+        btn.style.background = selected ? "rgba(59,130,246,0.22)" : "rgba(255,255,255,0.06)";
+        btn.style.border = "1px solid rgba(255,255,255,0.16)";
+        btn.style.borderRadius = "14px";
+        btn.style.padding = "12px 0";
+        btn.style.textAlign = "center";
+        btn.style.cursor = "pointer";
+        btn.style.fontWeight = "1000";
+        btn.style.userSelect = "none";
+        btn.style.color = selected ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.82)";
+      });
+
+      const redSelected = state.predictType === "color" && state.predictColor === "red";
+      const blackSelected = state.predictType === "color" && state.predictColor === "black";
+
+      if (redSelected) {
+        colorRed.style.outline = "2px solid rgba(147,197,253,0.95)";
+        colorRed.style.outlineOffset = "2px";
+        colorRed.style.background = "rgba(59,130,246,0.22)";
+        colorRed.style.color = "var(--red)";
+      } else {
+        colorRed.style.outline = "none";
+        colorRed.style.outlineOffset = "0px";
+        colorRed.style.background = "rgba(255,255,255,0.06)";
+        colorRed.style.color = "var(--red)";
+      }
+
+      if (blackSelected) {
+        colorBlack.style.outline = "2px solid rgba(147,197,253,0.95)";
+        colorBlack.style.outlineOffset = "2px";
+        colorBlack.style.background = "rgba(59,130,246,0.22)";
+      } else {
+        colorBlack.style.outline = "none";
+        colorBlack.style.outlineOffset = "0px";
+        colorBlack.style.background = "rgba(0,0,0,0.30)";
+      }
+    }
+
+    function drawRandomCard() {
+      const idx = Math.floor(Math.random() * deck.length);
+      return deck[idx];
+    }
+
+    function getPayoutMultiplier(card) {
+      // state.predictType에 따라 "수익(이익) 배수"
+      if (state.predictType === "rank") {
+        return card.rank === state.predictRank ? 12 : 0;
+      }
+      if (state.predictType === "color") {
+        return card.color === state.predictColor ? 1 : 0;
+      }
+      return 0;
+    }
+
+    function setCardUI(card) {
+      const isRed = card.color === "red";
+      cardBack.classList.add("hidden");
+      cardFront.classList.remove("hidden");
+      cardFront.classList.remove("red", "black");
+      cardFront.classList.add(isRed ? "red" : "black");
+      frontRank.textContent = rankLabel[card.rank];
+      frontSuit.textContent = card.suit.toUpperCase();
+    }
+
+    function addResultTag(card) {
+      const tag = document.createElement("div");
+      tag.className = "tag " + (card.color === "red" ? "red" : "black");
+      tag.textContent = `${rankLabel[card.rank]} ${getSuitShort(card.suit)}`;
+      lastResults.prepend(tag);
+    }
+
+    function refreshRecentUI() {
+      lastResults.innerHTML = "";
+      state.lastResults.slice(0, 10).forEach(card => addResultTag(card));
+    }
+
+    function resolveAndUpdate(card) {
+      const bet = state.betAmount;
+      const mult = getPayoutMultiplier(card); // hit이면 profit multiplier, 아닐 땐 0
+      if (mult > 0) {
+        const profit = bet * mult;
+        const totalReturn = bet + profit;
+        state.balance += totalReturn;
+        setStatus(`당첨! ${rankLabel[card.rank]} ${card.suit.toUpperCase()} (수익 +${profit}, 총 반환 ${totalReturn})`, "good");
+      } else {
+        setStatus(`꽝! ${rankLabel[card.rank]} ${card.suit.toUpperCase()} (베팅금 ${bet}을 잃었습니다.)`, "bad");
+      }
+      updateBalanceUI();
+    }
+
+    drawBtn.addEventListener("click", async () => {
+      if (state.spinning) return;
+      const amt = normalizeBetAmount();
+      if (!amt) {
+        setStatus("배팅금은 1 이상의 숫자를 입력하세요.", "bad");
+        return;
+      }
+      state.betAmount = amt;
+
+      if (state.balance < state.betAmount) {
+        setStatus(`잔액이 부족합니다. 잔액 ${state.balance}, 배팅금 ${state.betAmount}`, "bad");
+        return;
+      }
+
+      state.balance -= state.betAmount; // 베팅 선차감
+      updateBalanceUI();
+      state.spinning = true;
+      disableUI(true);
+      setStatus("카드를 뽑는 중...", "");
+
+      // 작은 딜레이(연출)
+      await new Promise(r => setTimeout(r, 700));
+      const card = drawRandomCard();
+      setCardUI(card);
+
+      state.lastResults.unshift(card);
+      refreshRecentUI();
+      lastText.textContent = `${rankLabel[card.rank]} ${getSuitShort(card.suit)}`;
+
+      resolveAndUpdate(card);
+
+      state.spinning = false;
+      disableUI(false);
+    });
+
+    document.querySelectorAll(".seg button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (state.spinning) return;
+        state.predictType = btn.dataset.predict;
+        document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("active", b.dataset.predict === state.predictType));
+        setStatus("예측을 선택했습니다. 이제 뽑기!", "");
+        updatePredictUI();
+      });
+    });
+
+    numButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (state.spinning) return;
+        state.predictType = "rank";
+        document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("active", b.dataset.predict === "rank"));
+        state.predictRank = Number(btn.dataset.r);
+        setStatus(`숫자 예측: ${rankLabel[state.predictRank]}`, "");
+        updatePredictUI();
+      });
+    });
+
+    colorRed.addEventListener("click", () => {
+      if (state.spinning) return;
+      state.predictType = "color";
+      document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("active", b.dataset.predict === "color"));
+      state.predictColor = "red";
+      setStatus("색 예측: RED", "");
+      updatePredictUI();
+    });
+    colorBlack.addEventListener("click", () => {
+      if (state.spinning) return;
+      state.predictType = "color";
+      document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("active", b.dataset.predict === "color"));
+      state.predictColor = "black";
+      setStatus("색 예측: BLACK", "");
+      updatePredictUI();
+    });
+
+    // 빠른 배팅 버튼
+    document.querySelectorAll(".mini[data-amt]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (state.spinning) return;
+        const add = Number(btn.dataset.amt);
+        const newAmt = Math.max(1, add);
+        betAmountEl.value = String(newAmt);
+        state.betAmount = newAmt;
+        setStatus("배팅금이 설정되었습니다. 이제 뽑기!", "");
+      });
+    });
+
+    maxBetBtn.addEventListener("click", () => {
+      if (state.spinning) return;
+      const amt = Math.max(1, Math.floor(state.balance));
+      betAmountEl.value = String(amt);
+      state.betAmount = amt;
+      setStatus(`최대 배팅금 설정: ${amt}`, "");
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (state.spinning) return;
+      state.balance = 1000;
+      state.lastResults = [];
+      state.predictType = "rank";
+      state.predictRank = 7;
+      state.predictColor = "red";
+      state.betAmount = 50;
+      betAmountEl.value = "50";
+      lastText.textContent = "-";
+      cardBack.classList.remove("hidden");
+      cardFront.classList.add("hidden");
+      setStatus("새 게임 시작! 예측 후 뽑기하세요.", "");
+      updateBalanceUI();
+      refreshRecentUI();
+
+      document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("active", b.dataset.predict === "rank"));
+      updatePredictUI();
+    });
+
+    withdrawBtn.addEventListener("click", () => {
+      if (state.spinning) return;
+      state.balance = 100;
+      updateBalanceUI();
+      setStatus("잔액을 100으로 설정했습니다. 더 짧게 플레이해보세요.", "");
+    });
+
+    betAmountEl.addEventListener("input", () => {
+      const amt = normalizeBetAmount();
+      if (amt) state.betAmount = amt;
+    });
+
+    // 초기화
+    updateBalanceUI();
+    refreshRecentUI();
+    updatePredictUI();
+    setStatus("배팅/예측을 선택한 뒤 `뽑기`를 누르세요.", "");
+    // 초기 섹션 노출
+    predictRankSection.classList.remove("hidden");
+    predictColorSection.classList.add("hidden");
+  </script>
+</body>
+</html>
+

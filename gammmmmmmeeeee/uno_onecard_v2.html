@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>UNO 원카드 v2</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:rgba(255,255,255,0.06);
+      --ring:rgba(255,255,255,0.18);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.65);
+      --good:#35d07f;
+      --bad:#ff4d6d;
+      --red:#e53935;
+      --yellow:#fbbf24;
+      --green:#16a34a;
+      --blue:#2563eb;
+      --cardRadius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(59,130,246,0.25), transparent 60%),
+        radial-gradient(900px 600px at 85% 15%, rgba(244,63,94,0.18), transparent 60%),
+        var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1100px;margin:22px auto;padding:0 16px 28px;}
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+    }
+    header h1{margin:0;font-weight:950;letter-spacing:-0.02em;font-size:20px}
+    .pillbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .pill{
+      background:var(--panel);
+      border:1px solid var(--ring);
+      padding:10px 12px;border-radius:14px;min-width:170px;
+    }
+    .pill .label{color:var(--muted);font-size:12px}
+    .pill .value{font-size:18px;font-weight:900;margin-top:4px}
+
+    .grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:14px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .cardBox{
+      background:var(--panel);
+      border:1px solid var(--ring);
+      border-radius:18px;
+      padding:14px;
+    }
+    .status{
+      margin-top:10px;padding:10px 12px;border-radius:14px;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.05);
+      color:var(--muted);
+      font-size:13px;line-height:1.35;min-height:44px;white-space:pre-wrap;
+    }
+    .status.good{border-color:rgba(53,208,127,0.45);color:rgba(180,255,214,0.95);background:rgba(53,208,127,0.10)}
+    .status.bad{border-color:rgba(255,77,109,0.55);color:rgba(255,176,189,0.95);background:rgba(255,77,109,0.12)}
+
+    .btn{
+      appearance:none;border:1px solid var(--ring);
+      background:rgba(255,255,255,0.06);color:var(--text);
+      padding:10px 12px;border-radius:14px;font-weight:950;cursor:pointer;
+      transition:160ms ease;user-select:none;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,0.09)}
+    .btn:active{transform:translateY(0px)}
+    .btn[disabled]{opacity:0.55;cursor:not-allowed;transform:none}
+    .btn.primary{border-color:rgba(251,191,36,0.6);background:rgba(251,191,36,0.18)}
+
+    /* UNO 카드 */
+    .unoCard{
+      width:118px;height:168px;border-radius:var(--cardRadius);
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(255,255,255,0.06);
+      box-shadow:0 18px 70px rgba(0,0,0,0.22);
+      overflow:hidden;position:relative;
+      display:flex;flex-direction:column;justify-content:space-between;
+      padding:10px 12px;user-select:none;
+    }
+    .unoCard::before{
+      content:"";position:absolute;inset:-40px -40px auto -40px;height:130px;
+      background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.18), transparent 55%);
+      transform:rotate(-10deg);
+    }
+    .unoCard > *{position:relative}
+    .unoCard .corner{font-size:12px;font-weight:950;opacity:0.9}
+    .unoCard .main{
+      font-size:34px;font-weight:1100;letter-spacing:-0.03em;line-height:1;
+      display:flex;align-items:center;justify-content:center;text-align:center;margin-top:12px;
+    }
+    .unoCard .bottom{display:flex;gap:8px;align-items:flex-end;justify-content:space-between;font-size:12px;font-weight:950;opacity:0.9}
+
+    .c-red{border-color:rgba(229,57,53,0.48);background:rgba(229,57,53,0.10)}
+    .c-yellow{border-color:rgba(251,191,36,0.55);background:rgba(251,191,36,0.10)}
+    .c-green{border-color:rgba(22,163,74,0.50);background:rgba(22,163,74,0.10)}
+    .c-blue{border-color:rgba(37,99,235,0.52);background:rgba(37,99,235,0.10)}
+    .c-wild{border-color:rgba(147,197,253,0.55);background:rgba(59,130,246,0.10)}
+    .t-red{color:var(--red)}
+    .t-yellow{color:var(--yellow)}
+    .t-green{color:var(--green)}
+    .t-blue{color:var(--blue)}
+    .t-wild{color:rgba(255,255,255,0.92)}
+
+    .hand{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .handBtn{
+      padding:0;border:0;background:transparent;cursor:pointer;
+      transition:160ms ease;user-select:none;
+    }
+    .handBtn:hover .unoCard{transform:translateY(-2px)}
+    .handBtn:disabled{cursor:not-allowed;opacity:0.55}
+    .handBtn .unoCard{transform:translateY(0);transition:160ms ease}
+
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .topRow{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+    .leftCol{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+    .pileLine{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+    .small{color:var(--muted);font-size:12px;font-weight:900}
+    .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .tag{
+      padding:7px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.06);font-weight:950;font-size:13px;color:rgba(255,255,255,0.9);
+    }
+    .tag.red{color:var(--red)}
+    .tag.yellow{color:var(--yellow)}
+    .tag.green{color:var(--green)}
+    .tag.blue{color:var(--blue)}
+    .tag.wild{color:rgba(255,255,255,0.92);background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.35)}
+
+    /* modal */
+    .modalBack{
+      position:fixed;inset:0;background:rgba(0,0,0,0.52);
+      display:none;align-items:center;justify-content:center;z-index:9999;padding:18px;
+    }
+    .modal{
+      width:min(520px,100%);
+      border-radius:18px;border:1px solid rgba(255,255,255,0.18);
+      background:rgba(15,22,45,0.92);
+      padding:14px;box-shadow:0 18px 70px rgba(0,0,0,0.45);
+    }
+    .modalTitle{font-weight:1100;letter-spacing:-0.02em}
+    .colorGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .colorChoice{
+      padding:14px 10px;border-radius:16px;cursor:pointer;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.06);font-weight:1100;text-align:center;
+      user-select:none;
+    }
+    .colorChoice:hover{transform:translateY(-1px);transition:160ms ease}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>UNO 원카드 v2</h1>
+      <div class="pillbar">
+        <div class="pill">
+          <div class="label">덱 남은 장</div>
+          <div class="value" id="deckCount">-</div>
+        </div>
+        <div class="pill">
+          <div class="label">턴</div>
+          <div class="value" id="turnText">-</div>
+        </div>
+        <div class="pill">
+          <div class="label">현재 색</div>
+          <div class="value" id="colorText">-</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="cardBox">
+        <div class="pileLine">
+          <div>
+            <div class="small" style="margin-bottom:8px;">드롭 더미</div>
+            <div class="row">
+              <div class="tag blue" style="opacity:0.95;">상단 카드</div>
+            </div>
+            <div style="margin-top:10px;">
+              <div id="topCard" class="unoCard c-wild" aria-label="상단 카드">
+                <div class="corner" id="topCorner">-</div>
+                <div class="main" id="topMain">-</div>
+                <div class="bottom">
+                  <div id="topLeft">-</div>
+                  <div id="topRight">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="min-width:280px;">
+            <div class="row" style="justify-content:flex-end;">
+              <button class="btn" id="restartBtn" type="button">리셋</button>
+              <button class="btn primary" id="drawBtn" type="button">카드 뽑기(턴 1장)</button>
+            </div>
+            <div class="status" id="statusBox">게임을 시작하세요.</div>
+            <div class="small" style="margin-top:12px;">최근 10장</div>
+            <div class="tags" id="recentTags"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="row" style="justify-content:space-between;">
+            <div class="row">
+              <div class="tag blue">CPU 손패: <span id="cpuHandCount">-</span>장</div>
+            </div>
+            <div class="row">
+              <div class="tag wild" style="opacity:0.95;">내 손패: <span id="playerHandCount">-</span>장</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="small" style="margin-bottom:8px;">내 손패 (낼 수 있으면 클릭)</div>
+          <div class="hand" id="playerHand"></div>
+          <div class="footerNote" style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.4;font-weight:900;">
+            원카드 규칙(중요):<br/>
+            - 낼 수 있으면 손패에서 <b>카드 1장만</b> 내요.<br/>
+            - 못 내면 <b>카드 1장만 뽑고</b> 턴이 끝나요(뽑은 카드로 즉시 내지 않음).
+          </div>
+        </div>
+      </div>
+
+      <div class="cardBox">
+        <div class="modalTitle">액션(간단)</div>
+        <div class="status" style="margin-top:10px;">
+          <div>SKIP: 다음 사람 턴 스킵</div>
+          <div style="margin-top:6px;">REVERSE: 방향 전환(2인이라도 연출용)</div>
+          <div style="margin-top:6px;">DRAW2: 다음 사람 2장 뽑고 턴 스킵</div>
+          <div style="margin-top:6px;">WILD: 색 선택</div>
+          <div style="margin-top:6px;">WILD+4: 다음 사람 4장 뽑고 턴 스킵 + 색 선택</div>
+        </div>
+        <div class="status" style="margin-top:12px;">
+          승리 조건: 내 손패가 먼저 0장이 되면 승리.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalBack" id="colorModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modalTitle">다음 색 선택</div>
+      <div class="small" style="margin-top:6px;">와일드 사용 시</div>
+      <div class="colorGrid" style="margin-top:12px;">
+        <div class="colorChoice t-red" id="chooseRed" style="border-color:rgba(229,57,53,0.45);background:rgba(229,57,53,0.10);">RED</div>
+        <div class="colorChoice t-yellow" id="chooseYellow" style="border-color:rgba(251,191,36,0.45);background:rgba(251,191,36,0.10);">YELLOW</div>
+        <div class="colorChoice t-green" id="chooseGreen" style="border-color:rgba(22,163,74,0.45);background:rgba(22,163,74,0.10);">GREEN</div>
+        <div class="colorChoice t-blue" id="chooseBlue" style="border-color:rgba(37,99,235,0.45);background:rgba(37,99,235,0.10);">BLUE</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = ["red","yellow","green","blue"];
+    const COLOR_LABEL = { red:"RED", yellow:"YELLOW", green:"GREEN", blue:"BLUE" };
+    const ACTION_LABEL = { skip:"SKIP", reverse:"REVERSE", draw2:"DRAW2" };
+    const WILD_LABEL = { wild:"WILD", wilddraw4:"WILD+4" };
+
+    function cardDisplay(card){
+      if (!card) return "-";
+      if (card.kind === "number") return String(card.value);
+      if (card.kind === "action") return ACTION_LABEL[card.action] || card.action;
+      if (card.kind === "wild") return WILD_LABEL[card.wild] || card.wild;
+      return "?";
+    }
+
+    function cardUiColor(card){
+      if (!card) return "wild";
+      if (card.kind === "wild") return "wild";
+      return card.color;
+    }
+
+    function cardTextClass(uiColor){
+      if (uiColor === "red") return "t-red";
+      if (uiColor === "yellow") return "t-yellow";
+      if (uiColor === "green") return "t-green";
+      if (uiColor === "blue") return "t-blue";
+      return "t-wild";
+    }
+
+    function deckCreate(){
+      let deck = [];
+      // 숫자/액션(UNO 표준을 근사): 0 1장, 1~9 각 2장, 액션은 각 2장
+      for (const color of COLORS){
+        deck.push({id:cryptoId(), kind:"number", color, value:0});
+        for (let v=1; v<=9; v++){
+          deck.push({id:cryptoId(), kind:"number", color, value:v});
+          deck.push({id:cryptoId(), kind:"number", color, value:v});
+        }
+        for (const action of ["skip","reverse","draw2"]){
+          deck.push({id:cryptoId(), kind:"action", color, action});
+          deck.push({id:cryptoId(), kind:"action", color, action});
+        }
+      }
+      for (let i=0;i<4;i++){
+        deck.push({id:cryptoId(), kind:"wild", wild:"wild"});
+        deck.push({id:cryptoId(), kind:"wild", wild:"wilddraw4"});
+      }
+      return shuffle(deck);
+    }
+
+    function cryptoId(){
+      // crypto가 없을 수 있어 안전하게 폴백
+      if (window.crypto && crypto.getRandomValues){
+        const a = new Uint32Array(1);
+        crypto.getRandomValues(a);
+        return "c"+a[0].toString(16);
+      }
+      return "c"+Math.random().toString(16).slice(2);
+    }
+
+    function shuffle(arr){
+      for (let i=arr.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+      }
+      return arr;
+    }
+
+    function canPlay(card, top, currentColor){
+      if (!top) return true;
+      if (card.kind === "wild") return true;
+
+      // 색이 같으면 OK
+      if (card.color === currentColor) return true;
+
+      // 숫자-숫자 값 같으면 OK
+      if (card.kind === "number" && top.kind === "number" && card.value === top.value) return true;
+      // 액션-액션 타입 같으면 OK
+      if (card.kind === "action" && top.kind === "action" && card.action === top.action) return true;
+
+      return false;
+    }
+
+    function colorForTop(top, currentColor){
+      if (!top) return "-";
+      if (top.kind === "wild") return COLOR_LABEL[currentColor] || "-";
+      return COLOR_LABEL[top.color] || "-";
+    }
+
+    // --- UI ---
+    const UI = {
+      deckCount: document.getElementById("deckCount"),
+      turnText: document.getElementById("turnText"),
+      colorText: document.getElementById("colorText"),
+      statusBox: document.getElementById("statusBox"),
+      restartBtn: document.getElementById("restartBtn"),
+      drawBtn: document.getElementById("drawBtn"),
+
+      topCard: document.getElementById("topCard"),
+      topCorner: document.getElementById("topCorner"),
+      topMain: document.getElementById("topMain"),
+      topLeft: document.getElementById("topLeft"),
+      topRight: document.getElementById("topRight"),
+
+      playerHand: document.getElementById("playerHand"),
+      recentTags: document.getElementById("recentTags"),
+      cpuHandCount: document.getElementById("cpuHandCount"),
+      playerHandCount: document.getElementById("playerHandCount"),
+
+      colorModal: document.getElementById("colorModal"),
+      chooseRed: document.getElementById("chooseRed"),
+      chooseYellow: document.getElementById("chooseYellow"),
+      chooseGreen: document.getElementById("chooseGreen"),
+      chooseBlue: document.getElementById("chooseBlue")
+    };
+
+    let pendingColorResolve = null;
+    function askColor(){
+      UI.colorModal.style.display = "flex";
+      return new Promise(resolve => { pendingColorResolve = resolve; });
+    }
+
+    function closeColorModal(){
+      UI.colorModal.style.display = "none";
+      pendingColorResolve = null;
+    }
+
+    UI.chooseRed.addEventListener("click", () => { if (!pendingColorResolve) return; pendingColorResolve("red"); closeColorModal(); });
+    UI.chooseYellow.addEventListener("click", () => { if (!pendingColorResolve) return; pendingColorResolve("yellow"); closeColorModal(); });
+    UI.chooseGreen.addEventListener("click", () => { if (!pendingColorResolve) return; pendingColorResolve("green"); closeColorModal(); });
+    UI.chooseBlue.addEventListener("click", () => { if (!pendingColorResolve) return; pendingColorResolve("blue"); closeColorModal(); });
+
+    function setStatus(msg, kind=""){
+      UI.statusBox.classList.remove("good","bad");
+      if (kind === "good") UI.statusBox.classList.add("good");
+      if (kind === "bad") UI.statusBox.classList.add("bad");
+      UI.statusBox.textContent = msg;
+    }
+
+    // --- game state ---
+    const state = {
+      deck: [],
+      discard: [],
+      currentColor: null,
+      direction: 1,
+      currentPlayer: 0, // 0 human, 1 cpu
+      playerHand: [],
+      cpuHand: [],
+      recent: [],
+      gameOver: false
+    };
+
+    function initHands(){
+      state.playerHand = [];
+      state.cpuHand = [];
+      for (let i=0;i<7;i++){
+        state.playerHand.push(drawOne());
+        state.cpuHand.push(drawOne());
+      }
+    }
+
+    function drawOne(){
+      if (state.deck.length > 0) return state.deck.pop();
+      // 덱이 비면: discard를 섞되, 맨 위(top)는 유지
+      reshuffleFromDiscard();
+      if (state.deck.length === 0) return null;
+      return state.deck.pop();
+    }
+
+    function reshuffleFromDiscard(){
+      if (state.discard.length <= 1) return;
+      const top = state.discard[state.discard.length - 1];
+      const rest = state.discard.slice(0, -1);
+      state.deck = shuffle(rest);
+      state.discard = [top];
+    }
+
+    function resetGame(){
+      state.deck = deckCreate();
+      state.discard = [];
+      state.direction = 1;
+      state.currentPlayer = 0;
+      state.playerHand = [];
+      state.cpuHand = [];
+      state.recent = [];
+      state.gameOver = false;
+
+      initHands();
+
+      // 시작 top: wild 피해서 뽑기
+      let top = drawOne();
+      while (top && top.kind === "wild"){
+        // 시작에서 wild면 discard에 넣지 않고 다시 섞기 느낌으로 처리
+        state.deck.unshift(top);
+        top = drawOne();
+      }
+      if (!top) top = {id:cryptoId(), kind:"number", color:"red", value:0};
+      state.discard.push(top);
+      state.currentColor = top.kind === "wild" ? COLORS[Math.floor(Math.random()*COLORS.length)] : top.color;
+
+      renderAll();
+      setStatus("게임 시작! 내 차례입니다. 낼 수 있으면 클릭하세요.", "");
+      maybeCpuTurn();
+    }
+
+    function updateTopUI(){
+      const top = state.discard[state.discard.length - 1];
+      if (!top) return;
+
+      const uiColor = cardUiColor(top);
+      UI.topCard.classList.remove("c-red","c-yellow","c-green","c-blue","c-wild");
+      if (uiColor === "red") UI.topCard.classList.add("c-red");
+      if (uiColor === "yellow") UI.topCard.classList.add("c-yellow");
+      if (uiColor === "green") UI.topCard.classList.add("c-green");
+      if (uiColor === "blue") UI.topCard.classList.add("c-blue");
+      if (uiColor === "wild") UI.topCard.classList.add("c-wild");
+
+      UI.topCorner.textContent = (top.kind === "wild") ? "WILD" : COLOR_LABEL[top.color];
+      UI.topMain.textContent = cardDisplay(top);
+      UI.topMain.className = "main "+cardTextClass(uiColor);
+      UI.topLeft.textContent = "상단";
+      UI.topRight.textContent = state.currentColor ? COLOR_LABEL[state.currentColor] : "-";
+
+      UI.colorText.textContent = colorForTop(top, state.currentColor);
+    }
+
+    function updateCounts(){
+      UI.deckCount.textContent = String(state.deck.length);
+      UI.playerHandCount.textContent = String(state.playerHand.length);
+      UI.cpuHandCount.textContent = String(state.cpuHand.length);
+    }
+
+    function getPlayableHand(hand){
+      const top = state.discard[state.discard.length - 1];
+      return hand.filter(c => canPlay(c, top, state.currentColor));
+    }
+
+    function renderRecent(){
+      UI.recentTags.innerHTML = "";
+      for (const c of state.recent.slice(0,10)){
+        const tc = cardUiColor(c);
+        const tag = document.createElement("div");
+        tag.className = "tag " + (tc === "red" ? "red" : tc === "yellow" ? "yellow" : tc === "green" ? "green" : tc === "blue" ? "blue" : "wild");
+        tag.textContent = cardDisplay(c);
+        UI.recentTags.appendChild(tag);
+      }
+    }
+
+    function renderHand(){
+      UI.playerHand.innerHTML = "";
+      const playable = new Set(getPlayableHand(state.playerHand).map(c => c.id));
+
+      const canInteract = state.currentPlayer === 0 && !state.gameOver;
+      UI.drawBtn.disabled = !(state.currentPlayer === 0 && !state.gameOver && getPlayableHand(state.playerHand).length === 0);
+
+      for (const card of state.playerHand){
+        const btn = document.createElement("button");
+        btn.className = "handBtn";
+        btn.type = "button";
+        const isPlayable = playable.has(card.id);
+        btn.disabled = !canInteract || !isPlayable;
+        btn.title = isPlayable ? "낼 수 있음" : "현재 규칙으로는 낼 수 없음";
+
+        const uiColor = cardUiColor(card);
+        const cls = (uiColor === "red") ? "c-red" : (uiColor === "yellow") ? "c-yellow" : (uiColor === "green") ? "c-green" : (uiColor === "blue") ? "c-blue" : "c-wild";
+        const textCls = cardTextClass(uiColor);
+
+        const el = document.createElement("div");
+        el.className = "unoCard "+cls;
+        el.innerHTML = `
+          <div class="corner">${(card.kind === "wild") ? "WILD" : COLOR_LABEL[card.color]}</div>
+          <div class="main ${textCls}">${cardDisplay(card)}</div>
+          <div class="bottom">
+            <div>${card.kind === "number" ? "숫자" : (card.kind === "action" ? "액션" : "와일드")}</div>
+            <div>${card.kind === "wild" ? ((card.wild === "wild") ? "ANY" : "ANY+4") : ""}</div>
+          </div>
+        `;
+        btn.appendChild(el);
+        btn.addEventListener("click", () => playHumanCard(card));
+        UI.playerHand.appendChild(btn);
+      }
+    }
+
+    function renderTurnText(){
+      UI.turnText.textContent = state.currentPlayer === 0 ? "내 차례" : "CPU 차례";
+    }
+
+    function renderAll(){
+      updateTopUI();
+      updateCounts();
+      renderTurnText();
+      renderRecent();
+      renderHand();
+    }
+
+    function nextPlayer(){
+      // 2인 기준이지만 방향도 반영해 일반화
+      const n = 2;
+      // 방향 1: human(0)->cpu(1)
+      // 방향 -1: human(0)->cpu(1) 그대로(2인에서는 결과가 같지만 연출용)
+      return (state.currentPlayer + (state.direction === 1 ? 1 : -1) + n) % n;
+    }
+
+    function addRecent(card){
+      state.recent.unshift(card);
+      if (state.recent.length > 20) state.recent.length = 20;
+      renderRecent();
+    }
+
+    async function playHumanCard(card){
+      if (state.gameOver) return;
+      if (state.currentPlayer !== 0) return;
+      const top = state.discard[state.discard.length - 1];
+      if (!canPlay(card, top, state.currentColor)) return;
+
+      // 낼 카드 제거
+      const idx = state.playerHand.findIndex(c => c.id === card.id);
+      if (idx < 0) return;
+      state.playerHand.splice(idx, 1);
+      state.discard.push(card);
+      addRecent(card);
+
+      // 현재색/효과 처리
+      const effects = await applyCardEffects(card, 0);
+      renderAll();
+
+      if (state.playerHand.length === 0){
+        state.gameOver = true;
+        setStatus("승리! 내 손패가 모두 없어졌어요.", "good");
+        UI.drawBtn.disabled = true;
+        return;
+      }
+
+      await turnEnd(effects);
+    }
+
+    function removeCardById(hand, id){
+      const idx = hand.findIndex(c => c.id === id);
+      if (idx >= 0) hand.splice(idx,1);
+    }
+
+    function chooseColorForCpu(){
+      // CPU는 손패에서 가장 많은 색을 선택(와일드 포함은 색이 없으니 제외)
+      const counts = {red:0, yellow:0, green:0, blue:0};
+      for (const c of state.cpuHand){
+        if (c.kind === "wild") continue;
+        counts[c.color] += 1;
+      }
+      let best = COLORS[0];
+      for (const col of COLORS){
+        if (counts[col] > counts[best]) best = col;
+      }
+      return best;
+    }
+
+    function cpuPickCard(){
+      const playable = getPlayableHand(state.cpuHand);
+      if (playable.length === 0) return null;
+      // 와일드 우선(단순 AI)
+      const wilds = playable.filter(c => c.kind === "wild");
+      if (wilds.length > 0) return wilds[Math.floor(Math.random()*wilds.length)];
+      return playable[Math.floor(Math.random()*playable.length)];
+    }
+
+    async function cpuTurn(){
+      if (state.gameOver) return;
+      if (state.currentPlayer !== 1) return;
+
+      // 낼 수 있으면 1장 내고 끝
+      const chosen = cpuPickCard();
+      if (chosen){
+        setStatus("CPU가 카드를 내는 중...", "");
+        await wait(420);
+        removeCardById(state.cpuHand, chosen.id);
+        state.discard.push(chosen);
+        addRecent(chosen);
+        const effects = await applyCardEffects(chosen, 1);
+        renderAll();
+
+        if (state.cpuHand.length === 0){
+          state.gameOver = true;
+          setStatus("패배! CPU 손패가 모두 없어졌어요.", "bad");
+          return;
+        }
+        await turnEnd(effects);
+        return;
+      }
+
+      // 못 내면 카드 1장 뽑고 끝(뽑은 카드로 즉시 내지 않음)
+      setStatus("CPU는 낼 수 없어 1장 뽑습니다.", "");
+      await wait(520);
+      const card = drawOne();
+      if (card) state.cpuHand.push(card);
+      renderAll();
+      state.currentPlayer = 0;
+      setStatus("내 차례입니다. 낼 수 있으면 클릭하세요.", "");
+      maybeCpuTurn(); // 혹시 상태 변경 버그 방지용
+    }
+
+    function maybeCpuTurn(){
+      if (state.gameOver) return;
+      if (state.currentPlayer === 1) cpuTurn();
+    }
+
+    function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+    async function applyCardEffects(card, playerIndex){
+      // 리턴: 다음 턴 처리 옵션
+      // { skip: boolean, drawCount: number }
+      let skip = false;
+      let drawCount = 0;
+
+      if (card.kind === "wild"){
+        // 와일드 색 선택
+        const chosenColor = (playerIndex === 0) ? await askColor() : chooseColorForCpu();
+        state.currentColor = chosenColor;
+
+        if (card.wild === "wilddraw4"){
+          drawCount = 4;
+          skip = true;
+        }
+        return { skip, drawCount };
+      }
+
+      // 숫자/액션은 해당 카드의 색이 현재색
+      state.currentColor = card.color;
+
+      if (card.kind === "action"){
+        if (card.action === "skip"){
+          skip = true;
+        } else if (card.action === "reverse"){
+          state.direction *= -1;
+          // UNO 2인 규칙: REVERSE는 SKIP과 동일하게 동작
+          skip = true;
+        } else if (card.action === "draw2"){
+          drawCount = 2;
+          skip = true;
+        }
+      }
+
+      return { skip, drawCount };
+    }
+
+    async function turnEnd(effects){
+      // 현재 플레이어는 이미 카드 냈던 사람.
+      // 다음 플레이어를 계산 후, DRAW 효과 적용 및 SKIP 반영.
+      let next = nextPlayer();
+
+      if (effects.drawCount > 0){
+        for (let i=0;i<effects.drawCount;i++){
+          const c = drawOne();
+          if (!c) break;
+          if (next === 0) state.playerHand.push(c);
+          else state.cpuHand.push(c);
+        }
+      }
+
+      if (effects.skip){
+        next = (next + 1) % 2; // 2인이라 단순히 다음 다음
+      }
+
+      state.currentPlayer = next;
+      renderAll();
+
+      if (state.gameOver) return;
+
+      if (state.currentPlayer === 0){
+        setStatus("내 차례입니다. 낼 수 있으면 클릭하세요.", "");
+      } else {
+        setStatus("CPU 차례입니다.", "");
+      }
+
+      maybeCpuTurn();
+    }
+
+    // Human draw: 못 내면 1장 뽑고 턴 끝
+    UI.drawBtn.addEventListener("click", async () => {
+      if (state.gameOver) return;
+      if (state.currentPlayer !== 0) return;
+
+      const playable = getPlayableHand(state.playerHand);
+      if (playable.length > 0){
+        setStatus("낼 수 있는 카드가 있어요. 손패에서 클릭하세요.", "bad");
+        return;
+      }
+      setStatus("카드를 1장 뽑는 중...", "");
+      await wait(420);
+      const card = drawOne();
+      if (!card){
+        setStatus("덱이 비어있습니다.", "bad");
+        return;
+      }
+      state.playerHand.push(card);
+      renderAll();
+      // 원카드 규칙: 뽑은 카드로 즉시 내지 않고 턴 종료
+      state.currentPlayer = 1;
+      renderAll();
+      setStatus("뽑았고 턴이 끝났습니다. CPU 차례.", "");
+      maybeCpuTurn();
+    });
+
+    UI.restartBtn.addEventListener("click", () => {
+      if (pendingColorResolve) pendingColorResolve(null);
+      closeColorModal();
+      resetGame();
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
+
